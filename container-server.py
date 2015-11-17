@@ -123,13 +123,13 @@ def containers_remove_all():
 @app.route('/images', methods=['DELETE'])
 def images_remove_all():
     """
-    Force remove all images - dangrous!
+    curl -s -X DELETE -H 'Accept: application/json' http://localhost:8080/images | python -mjson.tool
 
     """
-    images = docker_ps_to_array(docker('ps', '-a'))  
+    images = docker_images_to_array(docker('images', '-a'))  
     for i in images:
         docker('rmi', i['id'])
-    resp = '{"Response":"All containers deleted"}'
+    resp = '{"Response":"All images deleted"}'
     return Response(response=resp, mimetype="application/json")
  
 
@@ -180,6 +180,8 @@ def containers_update(id):
         state = body['state']
         if state == 'running':
             docker('restart', id)
+	if state == 'stopped':
+	    docker('stop',id)
     except:
         pass
 
@@ -194,7 +196,12 @@ def images_update(id):
     curl -s -X PATCH -H 'Content-Type: application/json' http://localhost:8080/images/7f2619ed1768 -d '{"tag": "test:1.0"}'
 
     """
-    resp = ''
+    body = request.get_json(force=True)
+    try:
+        tag=body['tag']
+        resp = docker('tag', id, tag)
+    except:
+        pass
     return Response(response=resp, mimetype="application/json")
 
 
